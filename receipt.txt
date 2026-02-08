@@ -1,0 +1,10 @@
+--- New Purchase ---
+Order ID: 5571
+User: Nguyen
+Tue Feb  3 00:56:42 2026
+USB-C Charging Cable - $8.5 x 3 = $25.50
+--- New Purchase ---
+Order ID: 1323
+User: Admin
+Wed Feb  4 11:42:37 2026
+Wireless Mouse - $12.99 x 1 = $12.99
