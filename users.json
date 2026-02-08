@@ -4,6 +4,11 @@
             "username": "Admin",
             "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
             "cart": []
+        },
+        {
+            "username": "Nguyen",
+            "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+            "cart": []
         }
     ],
     "catalog": [
@@ -11,71 +16,71 @@
             "id": 1,
             "title": "Wireless Mouse",
             "price": 12.99,
-            "stock": 9,
-            "description": "A compact wireless mouse with smooth tracking for everyday computer use."
+            "stock": 8,
+            "category": "general"
         },
         {
             "id": 2,
             "title": "USB-C Charging Cable",
             "price": 8.5,
-            "stock": 22,
-            "description": "Durable USB-C cable suitable for charging and data transfer."
+            "stock": 21,
+            "category": "general"
         },
         {
             "id": 3,
             "title": "Notebook",
             "price": 4.75,
             "stock": 50,
-            "description": "A lined paper notebook for school, work, or personal notes."
+            "category": "general"
         },
         {
             "id": 4,
             "title": "Reusable Water Bottle",
             "price": 15.99,
             "stock": 30,
-            "description": "A lightweight reusable bottle designed for daily hydration."
+            "category": "general"
         },
         {
             "id": 5,
             "title": "Desk Lamp",
             "price": 21.49,
             "stock": 15,
-            "description": "An adjustable desk lamp providing focused light for reading or working."
+            "category": "general"
         },
         {
             "id": 6,
             "title": "Bluetooth Headphones",
             "price": 34.0,
             "stock": 20,
-            "description": "Wireless headphones with clear sound for music and calls."
+            "category": "general"
         },
         {
             "id": 7,
             "title": "Backpack",
             "price": 28.75,
             "stock": 12,
-            "description": "A medium-sized backpack suitable for daily commuting or travel."
+            "category": "general"
         },
         {
             "id": 8,
             "title": "Coffee Mug",
             "price": 9.4,
             "stock": 40,
-            "description": "A ceramic mug ideal for hot or cold beverages."
+            "category": "general"
         },
         {
             "id": 9,
             "title": "Smartphone Stand",
             "price": 11.3,
             "stock": 18,
-            "description": "A stable stand for holding smartphones on a desk or table."
+            "category": "general"
         },
         {
             "id": 10,
             "title": "Portable Power Bank",
             "price": 24.6,
             "stock": 22,
-            "description": "A compact power bank for charging devices on the go."
+            "category": "general"
         }
     ]
 }
