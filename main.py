@@ -10,7 +10,7 @@ from product import Product
 
 FILE_NAME = "users.json"
 
-con = sqlite3.connect("test.db")
+con = sqlite3.connect("user.db")
 cur = con.cursor()
 
 def init_db():
