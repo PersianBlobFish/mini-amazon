@@ -1,10 +1,17 @@
 import sqlite3
 con = sqlite3.connect("test.db")
 cur = con.cursor()
-cur.execute("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)")
-cur.execute("INSERT INTO test (name) VALUES ('Sample Name')")
+# username = input("Enter username: ")
+# password = input("Enter password: ")
+# query = f"SELECT * FROM users WHERE name = '{username}' AND password = '{password }'"
+# cur.execute(query)
+# result = cur.fetchone()
+# if result:
+#     print("Login successful!")
+# else:
+#     print("Login failed!")
+# con.close()
+cmd = input("Enter command: ")
+cur.execute(cmd)
 con.commit()
-cur.execute("SELECT * FROM test")
-rows = cur.fetchall()
-for row in rows:
-    print(row)
+con.close()

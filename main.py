@@ -3,11 +3,26 @@ import os
 import datetime
 import random
 import hashlib
+import sqlite3
 from user import User
 from catalog import Catalog
+from product import Product
 
 FILE_NAME = "users.json"
 
+con = sqlite3.connect("test.db")
+cur = con.cursor()
+
+def init_db():
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            name TEXT PRIMARY KEY,
+            password TEXT NOT NULL
+        )
+    """)
+    con.commit()
+
+init_db()
 
 # Load existing users or initialize empty data
 if os.path.exists(FILE_NAME):
@@ -30,9 +45,13 @@ def save_all_data():
         json.dump(serializable, file, indent=4)
 
 def login(username, password_hash):
-    for user in data["users"]:
-        if user.username == username and user.password_hash == password_hash:
-            return True
+    query = "SELECT * FROM users WHERE name = ? AND password = ?"
+    cur.execute(query, (username, password_hash))
+    result = cur.fetchone()
+    if result:
+        for user in data["users"]:
+            if user.username == username:
+                return True
     return False
 
 def prompt_password(min_len=6):
@@ -54,7 +73,9 @@ def register(username, password_hash=None, min_len=6):
             return False  # Username already exists
 
     # save user
-    data["users"].append(User(username, password_hash, cart=[]))
+    data["users"].append(User(username, cart=[]))
+    cur.execute("INSERT INTO users (name, password) VALUES (?, ?)", (username, password_hash))
+    con.commit()
     save_all_data()
     return True
 
@@ -184,6 +205,8 @@ def menu(user: User):
         print("4.Save cart")
         print("5.Checkout")
         print("6.Exit")
+        if user.username == "admin":
+            print("7.Admin panel")
         print("---------------------")
         match input("Choose an option (1-6): ").strip():
             case "1":
@@ -210,12 +233,103 @@ def menu(user: User):
                 print("Exiting menu.")
                 print("---------------------")
                 return
+            case "7" if user.username == "admin":
+                print("Accessing admin panel...")
+                admin_panel()
+                print("---------------------")
             case _:
                 print("Invalid choice")
                 print("---------------------")
 
+def admin_panel():
+    while True:
+        print("Admin Panel")
+        print("1. View all users")
+        print("2. View all products")
+        print("3. Add new product")
+        print("4. Remove product")
+        print("5. Sqlite command prompt")
+        print("6. Exit")
+        choice = input("Choose an option (1-6): ").strip()
+
+        match choice:
+            case "1":
+                print("All registered users:")
+                for user in data["users"]:
+                    print(f"- {user.username}")
+            case "2":
+                print("Product catalog:")
+                for product in catalog.list_all():
+                    print(f"ID: {product.id}, Title: {product.title}, Price: ${product.price}, Stock: {product.stock}")
+            case "3":
+                title = input("Product title: ")
+
+                try:
+                    price = float(input("Product price: "))
+                    stock = int(input("Product stock: "))
+                except ValueError:
+                    print("Invalid input for price or stock. Please enter numeric values.")
+                    continue
+
+                category = input("Product category: ")
+
+                # auto-generate a new ID
+                new_id = max([p.id for p in catalog.products], default=0) + 1
+
+                product = Product(
+                    id=new_id,
+                    title=title,
+                    price=price,
+                    stock=stock,
+                    category=category
+                )
+
+                try:
+                    catalog.add_product(product)
+                    save_all_data()  # Save the new product to the file
+                    print("Product added successfully!")
+                except ValueError as e:
+                    print(e)
+            case "4":
+                try:
+                    product_id = int(input("Enter the product ID to remove: "))
+                except ValueError:
+                    print("Invalid input. Please enter a numeric value.")
+                    continue
+
+                product = catalog.get_by_id(product_id)
+                if product:
+                    catalog.products.remove(product)
+                    save_all_data()  # Save the updated catalog to the file
+                    print("Product removed successfully!")
+                else:
+                    print("Product ID not found.")
+            case "5":
+                print("Entering SQLite command prompt. Type 'exit' to return.")
+                while True:
+                    cmd = input("SQL> ").strip()
+                    if cmd.lower() == "exit":
+                        print("Exiting SQLite prompt.")
+                        break
+                    try:
+                        cur.execute(cmd)
+                        if cmd.lower().startswith("select"):
+                            rows = cur.fetchall()
+                            for row in rows:
+                                print(row)
+                        else:
+                            con.commit()
+                            print("Command executed successfully.")
+                    except Exception as e:
+                        print(f"Error executing command: {e}")
+            case "6":
+                print("Exiting admin panel.")
+                return
+            case _:
+                print("Invalid choice. Please select a valid option.")
 
 
+        
 def main():
     while True:
         choice = input("Type 'login', 'register', or 'exit': ").strip().lower()

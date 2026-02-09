@@ -4,7 +4,6 @@ class Catalog:
     def __init__(self, products=None):
         self.products = products or []
 
-    # ---------- Factory ----------
     @staticmethod
     def from_list(data):
         return Catalog([Product.from_dict(p) for p in data])
@@ -12,7 +11,6 @@ class Catalog:
     def to_list(self):
         return [p.to_dict() for p in self.products]
 
-    # ---------- Queries ----------
     def list_all(self):
         return self.products
 
@@ -35,7 +33,6 @@ class Catalog:
             if p.category.lower() == category.lower()
         ]
 
-    # ---------- Inventory ----------
     def has_stock(self, product_id, qty):
         product = self.get_by_id(product_id)
         return product and product.stock >= qty
@@ -47,3 +44,17 @@ class Catalog:
         if product.stock < qty:
             raise ValueError("Insufficient stock")
         product.stock -= qty
+    
+    def add_product(self, product):
+        """
+        Add a new Product to the catalog.
+        - product must be a Product instance
+        - product.id must be unique
+        """
+        if not isinstance(product, Product):
+            raise TypeError("product must be a Product instance")
+
+        if self.get_by_id(product.id):
+            raise ValueError(f"Product with id {product.id} already exists")
+
+        self.products.append(product)
