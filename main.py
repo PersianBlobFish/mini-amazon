@@ -333,7 +333,7 @@ def admin_panel():
                     print("Product ID not found.")
             case "5":
                 print("Entering SQLite command prompt. Type 'exit' to return.") # Simple command prompt for executing raw SQL commands against the user.db database, with error handling
-                while True:                                                     # Note: This is one risky one, as it allows executing arbitrary SQL commands. 
+                while True:                                                     # Note: This is one risky one, as it allows executing arbitrary SQL commands.
                     cmd = input("SQL> ").strip()
                     if cmd.lower() == "exit":
                         print("Exiting SQLite prompt.")
