@@ -8,11 +8,14 @@ from user import User
 from catalog import Catalog
 from product import Product
 
+# Define file name
 FILE_NAME = "users.json"
 
+# Initialize SQLite database connection
 con = sqlite3.connect("user.db")
 cur = con.cursor()
 
+# Create users table if it doesn't exist
 def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -20,7 +23,7 @@ def init_db():
             password TEXT NOT NULL
         )
     """)
-    con.commit()
+    con.commit() # Forgot to add Admin user
 
 init_db()
 
@@ -31,9 +34,11 @@ if os.path.exists(FILE_NAME):
 else:
     data = {"users": [], "catalog": []}
 
+# Convert user dicts to User objects
 data["users"] = [User.from_dict(u) for u in data["users"]]
 catalog = Catalog.from_list(data["catalog"]) if "catalog" in data else Catalog()
 
+# Save all data back to JSON file
 def save_all_data():
     # convert users back to dicts before saving
     serializable = {
@@ -41,55 +46,63 @@ def save_all_data():
         "users": [u.to_dict() for u in data["users"]],
         "catalog": catalog.to_list()
     }
+    # Save to JSON file
     with open(FILE_NAME, "w") as file:
         json.dump(serializable, file, indent=4)
 
+# Authentication function
 def login(username, password_hash):
-    query = "SELECT * FROM users WHERE name = ? AND password = ?"
+    query = "SELECT * FROM users WHERE name = ? AND password = ?" # Use parameterized query to prevent SQL injection (? placeholders)
     cur.execute(query, (username, password_hash))
     result = cur.fetchone()
+    # If a matching user is found, return True. Otherwise, return False.
     if result:
         for user in data["users"]:
             if user.username == username:
                 return True
     return False
 
+# Prompt user for password and return its hash (checking for minimum length)
 def prompt_password(min_len=6):
     while True:
         pw = input(f"Choose a password (min {min_len} chars): ")
         if len(pw) >= min_len:
-            return hashlib.sha256(pw.encode()).hexdigest()
+            return hashlib.sha256(pw.encode()).hexdigest() # Return the hash of the password
         print("Password too short! Try again.")
 
+# Registration function
 def register(username, password_hash=None, min_len=6):
-    # ask for password if not provided
+    # Ask for password if not provided
     if password_hash is None:
         password_hash = prompt_password(min_len)
 
 
-    # check duplicate username
+    # Check duplicate username
     for user in data["users"]:
         if user.username == username:
             return False  # Username already exists
 
-    # save user
+    # Save user
     data["users"].append(User(username, cart=[]))
     cur.execute("INSERT INTO users (name, password) VALUES (?, ?)", (username, password_hash))
     con.commit()
     save_all_data()
     return True
 
+# Helper function to get User object by username
 def get_user(username: str):
     for u in data["users"]:
         if u.username == username:
             return u
     return None
 
+# Cart management functions
 def add_to_cart(catalog: Catalog, cart):
     print("Available products:")
     for p in catalog.list_all():
-        print(f"ID: {p.id}, Title: {p.title}, Price: ${p.price}, Stock: {p.stock}")
+        print(f"ID: {p.id}, Title: {p.title}, Price: ${p.price}, Stock: {p.stock}") # Display stock information when listing products
 
+    # Get user input for product ID and quantity, with error handling
     try:
         product_id = int(input("Enter the product ID to add to cart: "))
         quantity = int(input("Enter quantity: "))
@@ -97,14 +110,17 @@ def add_to_cart(catalog: Catalog, cart):
         print("Invalid input. Please enter numeric values.")
         return
 
+    # Check if product ID exists and if enough stock is available
     product = catalog.get_by_id(product_id)
     if not product:
         print("Product ID not found.")
         return
     
+    # Check stock availability before adding to cart
     if not catalog.has_stock(product_id, quantity):
         print(f"Only {product.stock} items available in stock.")
         return
+    # Form the cart item and add to cart
     cart.append({
         "id": product.id,
         "title": product.title,
@@ -113,17 +129,20 @@ def add_to_cart(catalog: Catalog, cart):
     })
     print("Product ID not found.")
 
+# Remove item from cart by index, with error handling
 def remove_from_cart(cart):
     if not cart:
         print("Your cart is empty.")
         return
 
+    # Display cart items with indices for user to choose from
     print("Items in your cart:")
     for idx, item in enumerate(cart):
         print(f"{idx + 1}. {item['title']} - ${item['price']} x {item['quantity']}")
 
+    # Get user input for item index to remove, with error handling
     try:
-        item_idx = int(input("Enter the item number to remove from cart: ")) - 1
+        item_idx = int(input("Enter the item number to remove from cart: ")) - 1 # Convert to 0-based index
         if 0 <= item_idx < len(cart):
             removed_item = cart.pop(item_idx)
             print(f"Removed {removed_item['title']} from cart.")
@@ -132,12 +151,13 @@ def remove_from_cart(cart):
     except ValueError:
         print("Invalid input. Please enter a numeric value.")
 
+# Display cart contents and total price
 def view_cart(cart):
     if not cart:
         print("Your cart is empty.")
         return
 
-    print("Your cart contains:")
+    print("Your cart contains:") # Display cart items with details
     total = 0
     for item in cart:
         item_total = item['price'] * item['quantity']
@@ -145,10 +165,12 @@ def view_cart(cart):
         print(f"{item['title']} - ${item['price']} x {item['quantity']} = ${item_total:.2f}")
     print(f"Total: ${total:.2f}")
 
+# Save cart by saving all data (users and catalog) to the JSON file
 def save_cart(user: User):
     save_all_data()  # Save all data including users and their carts
     print("Cart saved successfully.")
 
+# Checkout function that verifies stock, generates receipt, reduces stock, and clears cart
 def checkout(user):
     cart = user.cart
     if not cart:
@@ -163,9 +185,11 @@ def checkout(user):
             print(f"Not enough stock for item id {item['id']}. Available: {available}. Checkout cancelled.")
             return
 
+    # Display cart contents and total before confirming purchase
     print("Checking out the following items:")
     total = 0
 
+    # Display each item with its total price and calculate the overall total
     for item in cart:
         item_total = item['price'] * item['quantity']
         total += item_total
@@ -194,7 +218,7 @@ def checkout(user):
     save_all_data()  # Save updated stock and cleared cart
     print("Thank you for your purchase!")
 
-
+# Main menu function that displays options and handles user input, with admin panel access for admin users
 def menu(user: User):
     cart = user.cart  # use the cart from the User object
     while True:
@@ -241,6 +265,7 @@ def menu(user: User):
                 print("Invalid choice")
                 print("---------------------")
 
+# Admin panel function that allows admin users to view users/products, add/remove products, and access SQLite command prompt
 def admin_panel():
     while True:
         print("Admin Panel")
@@ -273,10 +298,10 @@ def admin_panel():
 
                 category = input("Product category: ")
 
-                # auto-generate a new ID
+                # Auto-generate a new ID
                 new_id = max([p.id for p in catalog.products], default=0) + 1
 
-                product = Product(
+                product = Product( # Format the new product with the generated ID and user input
                     id=new_id,
                     title=title,
                     price=price,
@@ -284,6 +309,7 @@ def admin_panel():
                     category=category
                 )
 
+                # Add the new product to the catalog and save data, with error handling for duplicate IDs
                 try:
                     catalog.add_product(product)
                     save_all_data()  # Save the new product to the file
@@ -296,7 +322,8 @@ def admin_panel():
                 except ValueError:
                     print("Invalid input. Please enter a numeric value.")
                     continue
-
+                
+                # Find the product by ID and remove it from the catalog, with error handling for non-existent IDs
                 product = catalog.get_by_id(product_id)
                 if product:
                     catalog.products.remove(product)
@@ -305,14 +332,14 @@ def admin_panel():
                 else:
                     print("Product ID not found.")
             case "5":
-                print("Entering SQLite command prompt. Type 'exit' to return.")
-                while True:
+                print("Entering SQLite command prompt. Type 'exit' to return.") # Simple command prompt for executing raw SQL commands against the user.db database, with error handling
+                while True:                                                     # Note: This is one risky one, as it allows executing arbitrary SQL commands. In a real application, you would want to restrict this or use an admin interface instead.
                     cmd = input("SQL> ").strip()
                     if cmd.lower() == "exit":
                         print("Exiting SQLite prompt.")
                         break
                     try:
-                        cur.execute(cmd)
+                        cur.execute(cmd) # Execute the command and print results if it's a SELECT query, otherwise commit changes
                         if cmd.lower().startswith("select"):
                             rows = cur.fetchall()
                             for row in rows:
@@ -322,25 +349,26 @@ def admin_panel():
                             print("Command executed successfully.")
                     except Exception as e:
                         print(f"Error executing command: {e}")
-            case "6":
+            case "6": # Exit the admin panel and return to the main menu
                 print("Exiting admin panel.")
                 return
             case _:
                 print("Invalid choice. Please select a valid option.")
 
 
-        
+# Main function that displays the initial login/register menu and handles user authentication, with a loop to allow multiple attempts and access to the main menu upon successful login
 def main():
     while True:
         choice = input("Type 'login', 'register', or 'exit': ").strip().lower()
 
         match choice:
             case "login":
-                global username
+                global username # Note: I'm pretty sure, i had a sollution to this, but i forgot it
                 username = input("Username: ")
                 password = input("Password: ")
                 password_hash = hashlib.sha256(password.encode()).hexdigest()
 
+                # Authenticate user
                 if login(username, password_hash):
                     print(f"Login successful, Welcome! {username}")
                     user = get_user(username)
@@ -349,6 +377,7 @@ def main():
                 else:
                     print("Invalid username or password")
 
+            # Registration flow that prompts for username and password
             case "register":
                 username = input("Choose a username: ")
                 if username == "Admin":
@@ -358,7 +387,7 @@ def main():
                     print("Registration successful" if register(username, password) else "Username already exists")
 
             case "exit":
-                print("Bye!")
+                print("Good bye!")
                 break
 
             case _:
