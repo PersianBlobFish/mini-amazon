@@ -46,11 +46,6 @@ class Catalog:
         product.stock -= qty
     
     def add_product(self, product):
-        """
-        Add a new Product to the catalog.
-        - product must be a Product instance
-        - product.id must be unique
-        """
         if not isinstance(product, Product):
             raise TypeError("product must be a Product instance")
 
